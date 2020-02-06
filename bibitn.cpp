@@ -3,6 +3,7 @@
 #include <vector>
 #include <bitset>
 #include <fstream>
+#include <sstream>
 #include <cmath>
 #include <ctime>
 using namespace std;
@@ -110,7 +111,7 @@ void run(vector<bitset<M> >& mat,
   bitset<M> seed;
   for (int i=0; i<n-1; ++i) {
     r1 = validRows[i];
-    cout << "Working on row " << r1 << endl;
+    if (i % 1000 == 0) cout << "Working on row " << r1 << endl;
     for (int j=i+1; j<n; ++j) {      
       r2 = validRows[j];
       seed = mat[r1] & mat[r2];
@@ -139,6 +140,32 @@ void run(vector<bitset<M> >& mat,
   }
 }
 
+double meanSize(vector<vector<int> >& v) {
+  int sum = 0;
+  vector<vector<int> >::iterator it;
+  for (it=v.begin(); it!=v.end(); ++it) sum += (*it).size();
+  return ((double) sum) / v.size();
+}
+
+string generateStatsString(char** argv, 
+                vector<bitset<M> >& mat, 
+                vector<int>& validRows, 
+                vector<vector<int> >& finalPatterns,
+                double meanPatternSize,
+                double runtime) {
+  ostringstream oss;
+  oss << "input file: " << argv[1] << endl
+      << "output file: " << argv[2] << endl
+      << "minsup: " << argv[3] << endl
+      << "noise: " << argv[4] << endl
+      << "rows: " << mat.size() << endl
+      << "valid rows: " << validRows.size() << endl
+      << "final patterns: " << finalPatterns.size() << endl
+      << "average pattern size: " << meanPatternSize << endl
+      << "runtime(s): " << runtime << endl;
+  return oss.str();
+}
+
 // Each line contains list of row ids in pattern and corresponding seed bitset. Row ids are 1-indexed.
 void outputPatternsToFile(vector<vector<int> >& finalPatterns, vector<bitset<M> >& finalSeeds, string outFileName) {
   ofstream ofs(outFileName);
@@ -153,13 +180,17 @@ void outputPatternsToFile(vector<vector<int> >& finalPatterns, vector<bitset<M> 
   ofs.close();
 }
 
+void outputStringToFile(string s, string outFileName) {
+  ofstream ofs(outFileName);
+  ofs << s;
+  ofs.close();
+}
+
 int main(int argc, char** argv) {
   if (argc < 5) {
     cout << "./bibitn matrixFile outputFile minsup noise" << endl;
     return 1; 
   }
-  clock_t begin = clock();
-
   int minPatternSize = 10;
   string matrixFileName = argv[1];
   string outFileName = argv[2];
@@ -172,22 +203,24 @@ int main(int argc, char** argv) {
   vector<vector<int> > finalPatterns;
   vector<bitset<M> > finalSeeds;
   
+  clock_t begin = clock();
   cout << "Reading data..." << endl;
   readMatrix(matrixFileName, mat);
-  computeValidRows(mat, validRows, minsup, noise);
-  run(mat, validRows, visitedSeeds, finalPatterns, finalSeeds, minsup, noise, minPatternSize);
-  outputPatternsToFile(finalPatterns, finalSeeds, outFileName);
-
-  cout << "Done." << endl;
   cout << "rows: " << mat.size() << endl;
+  computeValidRows(mat, validRows, minsup, noise);
   cout << "valid rows: " << validRows.size() << endl;
-  //printVector(validRows);
-  cout << "final patterns: " << finalPatterns.size() << endl;
-  //print2dVector(finalPatterns);
-
+  run(mat, validRows, visitedSeeds, finalPatterns, finalSeeds, minsup, noise, minPatternSize);
+  cout << "Done." << endl;
   clock_t end = clock();
-  double elapsed = double(end-begin)/CLOCKS_PER_SEC;
-  cout << "runtime: " << elapsed << " sec" << endl;
+
+  double meanPatternSize = meanSize(finalPatterns);
+  double runtime = double(end-begin)/CLOCKS_PER_SEC;
+  string stats = generateStatsString(argv, mat, validRows, finalPatterns, meanPatternSize, runtime);
+  cout << stats;
+
+  outputPatternsToFile(finalPatterns, finalSeeds, outFileName);
+  string statsFileName = "stats_" + outFileName;
+  outputStringToFile(stats, statsFileName);
 
   return 0;
 }
