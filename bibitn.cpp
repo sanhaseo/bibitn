@@ -20,7 +20,7 @@ void print2dVector(vector<vector<int> >& v) {
 
 void readMatrix(string fileName, vector<bitset<M> >& mat) {
   string line;
-  ifstream ifs(fileName.c_str());
+  ifstream ifs(fileName);
   while (getline(ifs, line)) {
     bitset<M> row(line);
     mat.push_back(row);
@@ -100,6 +100,7 @@ void run(vector<bitset<M> >& mat,
         vector<int>& validRows, 
         vector<bitset<M> >& visitedSeeds, 
         vector<vector<int> >& finalPatterns, 
+        vector<bitset<M> >& finalSeeds,
         int minsup, 
         double noise,
         int minPatternSize) {
@@ -129,9 +130,26 @@ void run(vector<bitset<M> >& mat,
         if (overlap.count() >= minSize) pattern.push_back(r3);
       }
       if (pattern.size() < minPatternSize) continue;
-      if (!isVisited(pattern, finalPatterns)) finalPatterns.push_back(pattern);
+      if (!isVisited(pattern, finalPatterns)) {
+        finalPatterns.push_back(pattern);
+        finalSeeds.push_back(seed);
+      }
     }
   }
+}
+
+// Each line contains list of row ids in pattern and corresponding seed bitset. Row ids are 1-indexed.
+void outputPatternsToFile(vector<vector<int> >& finalPatterns, vector<bitset<M> >& finalSeeds, string outFileName) {
+  ofstream ofs(outFileName);
+  int n = finalPatterns.size();
+  for (int i=0; i<n; ++i) {
+    vector<int>::iterator it;
+    for (it=finalPatterns[i].begin(); it!=finalPatterns[i].end(); ++it) {
+      ofs << *it+1 << " "; // 1-indexing
+    }
+    ofs << finalSeeds[i].to_string() << endl;
+  }
+  ofs.close();
 }
 
 int main(int argc, char** argv) {
@@ -149,12 +167,16 @@ int main(int argc, char** argv) {
   vector<int> validRows;
   vector<bitset<M> > visitedSeeds;
   vector<vector<int> > finalPatterns;
+  vector<bitset<M> > finalSeeds;
   
   cout << "Reading data..." << endl;
   readMatrix(matrixFileName, mat);
   computeValidRows(mat, validRows, minsup, noise);
-  run(mat, validRows, visitedSeeds, finalPatterns, minsup, noise, minPatternSize);
+  run(mat, validRows, visitedSeeds, finalPatterns, finalSeeds, minsup, noise, minPatternSize);
+  cout << "Run complete. Writing output file..." << endl;
+  outputPatternsToFile(finalPatterns, finalSeeds, outFileName);
 
+  cout << "Done." << endl;
   cout << "row count = " << mat.size() << endl;
   cout << "valid row count = " << validRows.size() << endl;
   //printVector(validRows);
