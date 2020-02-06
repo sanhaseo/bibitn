@@ -219,7 +219,7 @@ int main(int argc, char** argv) {
   cout << stats;
 
   outputPatternsToFile(finalPatterns, finalSeeds, outFileName);
-  string statsFileName = "stats_" + outFileName;
+  string statsFileName = outFileName + "_stats";
   outputStringToFile(stats, statsFileName);
 
   return 0;
