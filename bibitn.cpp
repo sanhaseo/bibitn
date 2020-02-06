@@ -4,6 +4,7 @@
 #include <bitset>
 #include <fstream>
 #include <cmath>
+#include <ctime>
 using namespace std;
 #define M 35 // number of columns in input matrix
 
@@ -157,6 +158,8 @@ int main(int argc, char** argv) {
     cout << "./bibitn matrixFile outputFile minsup noise" << endl;
     return 1; 
   }
+  clock_t begin = clock();
+
   int minPatternSize = 10;
   string matrixFileName = argv[1];
   string outFileName = argv[2];
@@ -173,15 +176,18 @@ int main(int argc, char** argv) {
   readMatrix(matrixFileName, mat);
   computeValidRows(mat, validRows, minsup, noise);
   run(mat, validRows, visitedSeeds, finalPatterns, finalSeeds, minsup, noise, minPatternSize);
-  cout << "Run complete. Writing output file..." << endl;
   outputPatternsToFile(finalPatterns, finalSeeds, outFileName);
 
   cout << "Done." << endl;
-  cout << "row count = " << mat.size() << endl;
-  cout << "valid row count = " << validRows.size() << endl;
+  cout << "rows: " << mat.size() << endl;
+  cout << "valid rows: " << validRows.size() << endl;
   //printVector(validRows);
-  cout << "final pattern count = " << finalPatterns.size() << endl;
+  cout << "final patterns: " << finalPatterns.size() << endl;
   //print2dVector(finalPatterns);
+
+  clock_t end = clock();
+  double elapsed = double(end-begin)/CLOCKS_PER_SEC;
+  cout << "runtime: " << elapsed << " sec" << endl;
 
   return 0;
 }
