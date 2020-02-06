@@ -20,6 +20,13 @@ void print2dVector(vector<vector<int> >& v) {
   for (it=v.begin(); it!=v.end(); ++it) printVector(*it);
 }
 
+double meanSize(vector<vector<int> >& v) {
+  int sum = 0;
+  vector<vector<int> >::iterator it;
+  for (it=v.begin(); it!=v.end(); ++it) sum += (*it).size();
+  return ((double) sum) / v.size();
+}
+
 void readMatrix(string fileName, vector<bitset<M> >& mat) {
   string line;
   ifstream ifs(fileName);
@@ -138,13 +145,6 @@ void run(vector<bitset<M> >& mat,
       }
     }
   }
-}
-
-double meanSize(vector<vector<int> >& v) {
-  int sum = 0;
-  vector<vector<int> >::iterator it;
-  for (it=v.begin(); it!=v.end(); ++it) sum += (*it).size();
-  return ((double) sum) / v.size();
 }
 
 string generateStatsString(char** argv, 
