@@ -1,10 +1,10 @@
 input file: edge_attr_mat
 output file: aa
-minsup: 23
+minsup: 20
 noise: 0.1
 minsim: 0.7
 rows: 1548622
-valid rows: 3324
-final patterns: 337
-average pattern size: 185.142
-runtime(s): 2.43003
+valid rows: 6591
+final patterns: 2341
+average pattern size: 210.151
+runtime(s): 32.8757
