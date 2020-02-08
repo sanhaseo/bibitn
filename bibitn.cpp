@@ -6,6 +6,7 @@
 #include <sstream>
 #include <cmath>
 #include <ctime>
+#include "helper.h"
 using namespace std;
 #define M 35 // number of columns in input matrix
 
@@ -13,24 +14,6 @@ const int MIN_PATTERN_SIZE = 10;
 const double MIN_SEED_SIM = 0.7;
 int minsup;
 double noise, minsim; // minsim: min pattern similarity
-
-void printVector(vector<int>& v) {
-  vector<int>::iterator it;
-  for (it=v.begin(); it!=v.end(); ++it) cout << *it << " ";
-  cout << endl;
-}
-
-void print2dVector(vector<vector<int> >& v) {
-  vector<vector<int> >::iterator it;
-  for (it=v.begin(); it!=v.end(); ++it) printVector(*it);
-}
-
-double meanSize(vector<vector<int> >& v) {
-  int sum = 0;
-  vector<vector<int> >::iterator it;
-  for (it=v.begin(); it!=v.end(); ++it) sum += (*it).size();
-  return ((double) sum) / v.size();
-}
 
 void readMatrix(string fileName, vector<bitset<M> >& mat) {
   string line;
@@ -159,9 +142,9 @@ string generateStatsString(char** argv,
   ostringstream oss;
   oss << "input file: " << argv[1] << endl
       << "output file: " << argv[2] << endl
-      << "minsup: " << argv[3] << endl
-      << "noise: " << argv[4] << endl
-      << "minsim: " << argv[5] << endl
+      << "minsup: " << minsup << endl
+      << "noise: " << noise << endl
+      << "minsim: " << minsim << endl
       << "rows: " << mat.size() << endl
       << "valid rows: " << validRows.size() << endl
       << "final patterns: " << finalPatterns.size() << endl
@@ -228,4 +211,3 @@ int main(int argc, char** argv) {
 
   return 0;
 }
-
