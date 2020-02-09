@@ -11,9 +11,9 @@ using namespace std;
 #define M 35 // number of columns in input matrix
 
 const int MIN_PATTERN_SIZE = 10;
-const double MIN_SEED_SIM = 0.7;
+const double SEED_SIM_THR = 0.7;
 int minsup;
-double noise, minsim; // minsim: min pattern similarity
+double noise, simThr; // simThr: pattern similarity threshold
 
 void readMatrix(string fileName, vector<bitset<M> >& mat) {
   string line;
@@ -40,25 +40,25 @@ bool isSimilar(bitset<M>& s1, bitset<M>& s2) {
   bitset<M> intersection = s1 & s2;
   int overlap = intersection.count();
   double sim = ((double) overlap) / (n1 + n2 - overlap);
-  return sim >= MIN_SEED_SIM;
+  return sim >= SEED_SIM_THR;
 }
 
-// Based on Jaccard similarity. Assumes vectors are sorted in ascending order. ps: size of p1.
-bool isSimilar(vector<int>& p1, int ps, vector<int>& p2) {
-  int n1 = max(ps, int(p2.size()));
-  int n2 = min(ps, int(p2.size()));
-  if (((double) n2) / n1 < minsim) return false;
+// Based on Jaccard similarity. Assumes vectors are sorted in ascending order.
+bool isSimilar(vector<int>& p1, vector<int>& p2) {
+  int n1 = max(p1.size(), p2.size());
+  int n2 = min(p1.size(), p2.size());
+  if (((double) n2) / n1 < simThr) return false;
 
   int x = 0; // intersection count
   int y = 0; // non-intersection count
   // If x > maxX, vectors are similar. If y > maxY, vectors are NOT similar. (See derivation)
-  int maxX = int(floor(minsim*(n1+n2)/(minsim+1)));
-  int maxY = int(floor((n1+n2)*(1-minsim)/(1+minsim)));
+  int maxX = int(floor(simThr*(n1+n2)/(simThr+1)));
+  int maxY = int(floor((n1+n2)*(1-simThr)/(1+simThr)));
 
   vector<int>::iterator it1 = p1.begin();
   vector<int>::iterator it2 = p2.begin();
   while(true) {
-    if (it1==p1.begin()+ps || it2==p2.end()) break; // finished counting x
+    if (it1==p1.end() || it2==p2.end()) break; // finished counting x
     if (*it1 == *it2) {
       x++;
       if (x > maxX) return true;
@@ -82,11 +82,11 @@ bool isVisited(bitset<M>& seed, vector<bitset<M> >& visitedSeeds) {
   return false;
 }
 
-// Check if pattern has been visited. ps: size of pattern.
-bool isVisited(vector<int>& pattern, int ps, vector<vector<int> >& finalPatterns) {
+// Check if pattern has been visited
+bool isVisited(vector<int>& pattern, vector<vector<int> >& finalPatterns) {
   vector<vector<int> >::iterator it;
   for (it=finalPatterns.begin(); it!=finalPatterns.end(); ++it) {
-    if (isSimilar(pattern, ps, *it)) return true;
+    if (isSimilar(pattern, *it)) return true;
   }
   return false;
 }
@@ -99,8 +99,6 @@ void run(vector<bitset<M> >& mat,
   int n = validRows.size();
   int r1, r2, r3, seedSize, minSize;
   bitset<M> seed;
-  vector<int> pattern(n, 0); // pre-allocate size n vector, truncate later
-  int ps = 0; // current pattern size
   for (int i=0; i<n-1; ++i) {
     r1 = validRows[i];
     if (i % 1000 == 0) cout << "Working on row " << r1 << endl;
@@ -113,20 +111,20 @@ void run(vector<bitset<M> >& mat,
       if (isVisited(seed, visitedSeeds)) continue;
       
       visitedSeeds.push_back(seed);
-      ps = 0;
-      pattern[ps++] = r1;
-      pattern[ps++] = r2;
+      vector<int> pattern;
+      pattern.reserve(n);
+      pattern.push_back(r1);
+      pattern.push_back(r2);
       
       minSize = int(round((1-noise)*seedSize)); // min number of ones per row
       for (int k=j+1; k<n; ++k) {
         r3 = validRows[k];
         bitset<M> overlap = seed & mat[r3];
-        if (overlap.count() >= minSize) pattern[ps++] = r3;
+        if (overlap.count() >= minSize) pattern.push_back(r3);
       }
-      if (ps < MIN_PATTERN_SIZE) continue;
-      if (!isVisited(pattern, ps, finalPatterns)) {
-	    vector<int> p(pattern.begin(), pattern.begin()+ps); // truncate
-        finalPatterns.push_back(p);
+      if (pattern.size() < MIN_PATTERN_SIZE) continue;
+      if (!isVisited(pattern, finalPatterns)) {
+        finalPatterns.push_back(pattern);
         finalSeeds.push_back(seed);
       }
     }
@@ -144,7 +142,7 @@ string generateStatsString(char** argv,
       << "output file: " << argv[2] << endl
       << "minsup: " << minsup << endl
       << "noise: " << noise << endl
-      << "minsim: " << minsim << endl
+      << "simThr: " << simThr << endl
       << "rows: " << mat.size() << endl
       << "valid rows: " << validRows.size() << endl
       << "final patterns: " << finalPatterns.size() << endl
@@ -175,14 +173,14 @@ void outputStringToFile(string s, string outFileName) {
 
 int main(int argc, char** argv) {
   if (argc < 6) {
-    cout << "./bibitn matrixFile outputFile minsup noise minsim" << endl;
+    cout << "./bibitn matrixFile outputFile minsup noise simThr" << endl;
     return 1; 
   }
   string matrixFileName = argv[1];
   string outFileName = argv[2];
   minsup = atoi(argv[3]);
   noise = atof(argv[4]);
-  minsim = atof(argv[5]);
+  simThr = atof(argv[5]);
 
   vector<bitset<M> > mat;
   vector<int> validRows;
@@ -206,8 +204,7 @@ int main(int argc, char** argv) {
   cout << stats;
 
   outputPatternsToFile(finalPatterns, finalSeeds, outFileName);
-  string statsFileName = outFileName + "_stats";
-  outputStringToFile(stats, statsFileName);
+  outputStringToFile(stats, outFileName + "_stats");
 
   return 0;
 }
