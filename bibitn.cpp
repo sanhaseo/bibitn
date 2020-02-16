@@ -14,7 +14,6 @@ const int MIN_PATTERN_SIZE = 10;
 const double SEED_SIM_THR = 0.7;
 int minsup;
 double noise, simThr; // simThr: pattern similarity threshold
-bool prune; // flag for pruning similar patterns
 
 void readMatrix(string fileName, vector<bitset<M> >& mat) {
   string line;
@@ -124,7 +123,7 @@ void run(vector<bitset<M> >& mat,
         if (overlap.count() >= minSize) pattern.push_back(r3);
       }
       if (pattern.size() < MIN_PATTERN_SIZE) continue;
-      if (prune && isVisited(pattern, finalPatterns)) continue;
+      if (isVisited(pattern, finalPatterns)) continue;
       finalPatterns.push_back(pattern);
       finalSeeds.push_back(seed);
     }
@@ -137,14 +136,12 @@ string generateStatsString(char** argv,
                 vector<vector<int> >& finalPatterns,
                 double meanPatternSize,
                 double runtime) {
-  string pruneStr = prune ? "true" : "false";
   ostringstream oss;
   oss << "input file: " << argv[1] << endl
       << "output file: " << argv[2] << endl
       << "minsup: " << minsup << endl
       << "noise: " << noise << endl
       << "simThr: " << simThr << endl
-      << "prune: " << pruneStr << endl
       << "rows: " << mat.size() << endl
       << "valid rows: " << validRows.size() << endl
       << "final patterns: " << finalPatterns.size() << endl
@@ -174,8 +171,8 @@ void outputStringToFile(string s, string outFileName) {
 }
 
 int main(int argc, char** argv) {
-  if (argc < 7) {
-    cout << "./bibitn matrixFile outputFile minsup noise simThr -y/n(prune)" << endl;
+  if (argc < 6) {
+    cout << "./bibitn matrixFile outputFile minsup noise simThr" << endl;
     return 1; 
   }
   string matrixFileName = argv[1];
@@ -183,9 +180,6 @@ int main(int argc, char** argv) {
   minsup = atoi(argv[3]);
   noise = atof(argv[4]);
   simThr = atof(argv[5]);
-  string pruneFlag = argv[6];
-  if (pruneFlag.compare("-n") == 0) prune = false;
-  else prune = true;
 
   vector<bitset<M> > mat;
   vector<int> validRows;
