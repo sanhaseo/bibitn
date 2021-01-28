@@ -6,13 +6,14 @@
 #include <sstream>
 #include <cmath>
 #include <ctime>
+#include <algorithm>
 #include "helper.h"
 using namespace std;
 #define M 35 // number of columns in input matrix
 
 const int MIN_PATTERN_SIZE = 10;
 const double SEED_SIM_THR = 0.7;
-int minsup;
+int minsup, patternsPruned;
 double noise, simThr; // simThr: pattern similarity threshold
 
 void readMatrix(string fileName, vector<bitset<M> >& mat) {
@@ -117,13 +118,18 @@ void run(vector<bitset<M> >& mat,
       pattern.push_back(r2);
       
       minSize = int(round((1-noise)*seedSize)); // min number of ones per row
-      for (int k=j+1; k<n; ++k) {
+      for (int k=0; k<n; ++k) {
+        if (k == i || k == j) continue;
         r3 = validRows[k];
         bitset<M> overlap = seed & mat[r3];
         if (overlap.count() >= minSize) pattern.push_back(r3);
       }
       if (pattern.size() < MIN_PATTERN_SIZE) continue;
-      if (isVisited(pattern, finalPatterns)) continue;
+      sort(pattern.begin(), pattern.end()); // isVisited function requires pattern to be sorted
+      if (isVisited(pattern, finalPatterns)) {
+        patternsPruned++;
+        continue;
+      }
       finalPatterns.push_back(pattern);
       finalSeeds.push_back(seed);
     }
@@ -146,6 +152,7 @@ string generateStatsString(char** argv,
       << "valid rows: " << validRows.size() << endl
       << "final patterns: " << finalPatterns.size() << endl
       << "average pattern size: " << meanPatternSize << endl
+      << "patterns pruned: " << patternsPruned << endl
       << "runtime(s): " << runtime << endl;
   return oss.str();
 }
@@ -180,6 +187,7 @@ int main(int argc, char** argv) {
   minsup = atoi(argv[3]);
   noise = atof(argv[4]);
   simThr = atof(argv[5]);
+  patternsPruned = 0;
 
   vector<bitset<M> > mat;
   vector<int> validRows;
